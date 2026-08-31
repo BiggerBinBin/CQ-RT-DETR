@@ -1,0 +1,47 @@
+__include__: ['../E_lite3_cb.yml']
+
+output_dir: ./output/repeated_runs/S2_scale_reliable_tccm5903
+
+criterion: SRTCCMCriterionv2
+
+SRTCCMCriterionv2:
+  weight_dict: {loss_vfl: 1, loss_bbox: 5, loss_giou: 2}
+  losses: [vfl, boxes]
+  alpha: 0.75
+  gamma: 2.0
+  share_matched_indices: False
+
+  # Conservative delayed activation.
+  sr_start_epoch: 30
+  sr_ramp_epochs: 20
+  sr_rank_weight: 0.10
+  sr_budget_fraction: 0.03
+
+  # Persistent same-target competitor mining.
+  sr_min_iou: 0.25
+  sr_min_prob: 0.03
+  sr_max_competitors: 2
+  sr_stability_tau: 0.03
+  sr_use_trajectory: True
+
+  # S2/S3 scale protection.
+  sr_use_scale_reliability: True
+  sr_area_reference: 0.1066207444
+  sr_scale_floor: 0.10
+
+  # S3 quality-consistency protection.
+  sr_use_quality_gate: False
+  sr_quality_prob_alpha: 1.0
+  sr_quality_iou_beta: 2.0
+  sr_quality_tau: 0.05
+  sr_winner_iou_tau: 0.05
+
+  sr_margin_base: 0.02
+  sr_margin_scale: 0.10
+  sr_temperature: 0.20
+
+  matcher:
+    type: HungarianMatcher
+    weight_dict: {cost_class: 2, cost_bbox: 5, cost_giou: 2}
+    alpha: 0.25
+    gamma: 2.0

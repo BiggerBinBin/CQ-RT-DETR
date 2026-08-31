@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editors
+.idea/
+.vscode/
+
+# Training outputs
+output/
+outputs/
+runs/
+run/
+logs/
+weedlab_logs/
+wandb/
+
+# Model weights and exported engines
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.engine
+*.trt
+
+# Datasets and image files
+dataset/
+datasets/
+data/images/
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+
+# Generated numerical artifacts
+*.npy
+*.npz
+*.csv
+*.xlsx
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db

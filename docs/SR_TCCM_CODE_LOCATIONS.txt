@@ -1,0 +1,182 @@
+src/zoo/rtdetr/__init__.py:19:from .sr_tccm_criterion import SRTCCMCriterionv2
+src/zoo/rtdetr/__init__.py:20:from .s4_sr_tccm_criterion import S4SRTCCMCriterionv2
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:4:S4 SR-TCCM for RT-DETRv2
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:11:- unlike S3, no competitor is hard-deleted by a quality threshold.
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:19:It only calibrates the final-layer competition between the Hungarian winner
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:20:and persistent same-target competitors. The ranking direction is aligned with
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:21:RT-DETRv2 VFL: the matched winner is pushed above unmatched competitors.
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:35:__all__ = ["S4SRTCCMCriterionv2"]
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:53:class S4SRTCCMCriterionv2(RTDETRCriterionv2):
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:74:        # Competitor mining
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:77:        sr_max_competitors: int = 2,
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:89:        sr_winner_iou_tau: float = 0.05,
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:109:        if sr_max_competitors < 1:
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:110:            raise ValueError("sr_max_competitors must be >= 1.")
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:127:        self.sr_max_competitors = int(sr_max_competitors)
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:140:        self.sr_winner_iou_tau = float(sr_winner_iou_tau)
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:217:    def _raw_rank_loss(
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:232:        mean_winner_gate = zero.new_tensor(0.0)
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:254:            # A query assigned to any GT must never be suppressed as a competitor.
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:258:            for winner_q_raw, target_j_raw in zip(src_indices.tolist(), tgt_indices.tolist()):
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:259:                winner_q = int(winner_q_raw)
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:263:                winner_iou = final_iou[winner_q, target_j].detach()
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:264:                winner_prob = final_probs[winner_q, class_j].detach()
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:265:                if float(winner_iou) < self.sr_min_iou:
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:278:                # Strict winner protection: never suppress a better-localized query.
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:279:                candidate_mask &= final_iou[:, target_j].detach().le(winner_iou)
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:300:                winner_quality = self._quality(winner_prob, winner_iou)
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:302:                quality_delta = winner_quality - candidate_quality
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:312:                keep = min(self.sr_max_competitors, int(candidate_indices.numel()))
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:320:                competitors = candidate_indices[top_pos]
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:321:                competitor_iou = candidate_iou[top_pos]
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:323:                competitor_quality_gate = quality_gate[top_pos]
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:325:                winner_gate = torch.sigmoid(
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:326:                    (winner_iou - competitor_iou) / self.sr_winner_iou_tau
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:329:                # chooses competitors; the pair weight controls optimization.
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:333:                    * winner_gate
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:334:                    * competitor_quality_gate
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:337:                winner_logit = final_logits[winner_q, class_j]
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:338:                competitor_logits = final_logits[competitors, class_j]
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:347:                    (competitor_logits - winner_logit + margin) / self.sr_temperature
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:355:                mean_quality_gate = mean_quality_gate + competitor_quality_gate.mean().detach()
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:356:                mean_winner_gate = mean_winner_gate + winner_gate.mean().detach()
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:365:                "sr_winner_gate": zero,
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:375:            "sr_winner_gate": mean_winner_gate / denominator,
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:411:        raw_rank, diagnostics = self._raw_rank_loss(outputs, targets, final_match)
+src/zoo/rtdetr/s4_sr_tccm_criterion.py:414:        losses["loss_sr_tccm"] = self._budgeted_loss(raw_rank, base_vfl, schedule)
+src/zoo/rtdetr/sr_tccm_criterion.py:4:SR-TCCM for RT-DETRv2
+src/zoo/rtdetr/sr_tccm_criterion.py:14:It only calibrates the final-layer competition between the Hungarian winner
+src/zoo/rtdetr/sr_tccm_criterion.py:15:and persistent same-target competitors. The ranking direction is aligned with
+src/zoo/rtdetr/sr_tccm_criterion.py:16:RT-DETRv2 VFL: the matched winner is pushed above unmatched competitors.
+src/zoo/rtdetr/sr_tccm_criterion.py:30:__all__ = ["SRTCCMCriterionv2"]
+src/zoo/rtdetr/sr_tccm_criterion.py:48:class SRTCCMCriterionv2(RTDETRCriterionv2):
+src/zoo/rtdetr/sr_tccm_criterion.py:69:        # Competitor mining
+src/zoo/rtdetr/sr_tccm_criterion.py:72:        sr_max_competitors: int = 2,
+src/zoo/rtdetr/sr_tccm_criterion.py:83:        sr_winner_iou_tau: float = 0.05,
+src/zoo/rtdetr/sr_tccm_criterion.py:103:        if sr_max_competitors < 1:
+src/zoo/rtdetr/sr_tccm_criterion.py:104:            raise ValueError("sr_max_competitors must be >= 1.")
+src/zoo/rtdetr/sr_tccm_criterion.py:119:        self.sr_max_competitors = int(sr_max_competitors)
+src/zoo/rtdetr/sr_tccm_criterion.py:130:        self.sr_winner_iou_tau = float(sr_winner_iou_tau)
+src/zoo/rtdetr/sr_tccm_criterion.py:172:    def _raw_rank_loss(
+src/zoo/rtdetr/sr_tccm_criterion.py:187:        mean_winner_gate = zero.new_tensor(0.0)
+src/zoo/rtdetr/sr_tccm_criterion.py:209:            # A query assigned to any GT must never be suppressed as a competitor.
+src/zoo/rtdetr/sr_tccm_criterion.py:213:            for winner_q_raw, target_j_raw in zip(src_indices.tolist(), tgt_indices.tolist()):
+src/zoo/rtdetr/sr_tccm_criterion.py:214:                winner_q = int(winner_q_raw)
+src/zoo/rtdetr/sr_tccm_criterion.py:218:                winner_iou = final_iou[winner_q, target_j].detach()
+src/zoo/rtdetr/sr_tccm_criterion.py:219:                winner_prob = final_probs[winner_q, class_j].detach()
+src/zoo/rtdetr/sr_tccm_criterion.py:220:                if float(winner_iou) < self.sr_min_iou:
+src/zoo/rtdetr/sr_tccm_criterion.py:233:                # Strict winner protection: never suppress a better-localized query.
+src/zoo/rtdetr/sr_tccm_criterion.py:234:                candidate_mask &= final_iou[:, target_j].detach().le(winner_iou)
+src/zoo/rtdetr/sr_tccm_criterion.py:255:                winner_quality = self._quality(winner_prob, winner_iou)
+src/zoo/rtdetr/sr_tccm_criterion.py:257:                quality_delta = winner_quality - candidate_quality
+src/zoo/rtdetr/sr_tccm_criterion.py:272:                keep = min(self.sr_max_competitors, int(candidate_indices.numel()))
+src/zoo/rtdetr/sr_tccm_criterion.py:279:                competitors = candidate_indices[top_pos]
+src/zoo/rtdetr/sr_tccm_criterion.py:280:                competitor_iou = candidate_iou[top_pos]
+src/zoo/rtdetr/sr_tccm_criterion.py:281:                competitor_quality_gate = quality_gate[top_pos]
+src/zoo/rtdetr/sr_tccm_criterion.py:284:                winner_gate = torch.sigmoid(
+src/zoo/rtdetr/sr_tccm_criterion.py:285:                    (winner_iou - competitor_iou) / self.sr_winner_iou_tau
+src/zoo/rtdetr/sr_tccm_criterion.py:288:                    top_values * scale_gate * winner_gate * competitor_quality_gate
+src/zoo/rtdetr/sr_tccm_criterion.py:291:                winner_logit = final_logits[winner_q, class_j]
+src/zoo/rtdetr/sr_tccm_criterion.py:292:                competitor_logits = final_logits[competitors, class_j]
+src/zoo/rtdetr/sr_tccm_criterion.py:298:                    (competitor_logits - winner_logit + margin) / self.sr_temperature
+src/zoo/rtdetr/sr_tccm_criterion.py:306:                mean_quality_gate = mean_quality_gate + competitor_quality_gate.mean().detach()
+src/zoo/rtdetr/sr_tccm_criterion.py:307:                mean_winner_gate = mean_winner_gate + winner_gate.mean().detach()
+src/zoo/rtdetr/sr_tccm_criterion.py:316:                "sr_winner_gate": zero,
+src/zoo/rtdetr/sr_tccm_criterion.py:326:            "sr_winner_gate": mean_winner_gate / denominator,
+src/zoo/rtdetr/sr_tccm_criterion.py:362:        raw_rank, diagnostics = self._raw_rank_loss(outputs, targets, final_match)
+src/zoo/rtdetr/sr_tccm_criterion.py:365:        losses["loss_sr_tccm"] = self._budgeted_loss(raw_rank, base_vfl, schedule)
+src/zoo/rtdetr/tccm_criterion.py:8:classification head. Instead, TCCM identifies persistent competitors around a
+src/zoo/rtdetr/tccm_criterion.py:9:final Hungarian winner and applies a small, delayed, budget-capped pairwise
+src/zoo/rtdetr/tccm_criterion.py:10:margin so the winner ranks above those duplicates.
+src/zoo/rtdetr/tccm_criterion.py:54:        tccm_max_competitors: int = 2,
+src/zoo/rtdetr/tccm_criterion.py:57:        tccm_winner_iou_tolerance: float = 0.02,
+src/zoo/rtdetr/tccm_criterion.py:79:        if tccm_max_competitors < 1:
+src/zoo/rtdetr/tccm_criterion.py:80:            raise ValueError("tccm_max_competitors must be >= 1")
+src/zoo/rtdetr/tccm_criterion.py:88:        self.tccm_max_competitors = int(tccm_max_competitors)
+src/zoo/rtdetr/tccm_criterion.py:91:        self.tccm_winner_iou_tolerance = float(tccm_winner_iou_tolerance)
+src/zoo/rtdetr/tccm_criterion.py:119:    def _rank_loss(
+src/zoo/rtdetr/tccm_criterion.py:143:            winner_queries = {int(index) for index in src_indices.tolist()}
+src/zoo/rtdetr/tccm_criterion.py:146:                winner_query = int(query_value)
+src/zoo/rtdetr/tccm_criterion.py:149:                winner_iou = final_iou[winner_query, target_index].detach()
+src/zoo/rtdetr/tccm_criterion.py:150:                if float(winner_iou) < self.tccm_min_iou:
+src/zoo/rtdetr/tccm_criterion.py:154:                for matched_query in winner_queries:
+src/zoo/rtdetr/tccm_criterion.py:158:                mask &= final_iou[:, target_index].detach() <= winner_iou + self.tccm_winner_iou_tolerance
+src/zoo/rtdetr/tccm_criterion.py:160:                # Avoid cross-object suppression: a competitor is associated
+src/zoo/rtdetr/tccm_criterion.py:179:                keep = min(self.tccm_max_competitors, int(candidate_indices.numel()))
+src/zoo/rtdetr/tccm_criterion.py:181:                competitors = candidate_indices[positions]
+src/zoo/rtdetr/tccm_criterion.py:183:                winner_logit = final_logits[winner_query, class_index]
+src/zoo/rtdetr/tccm_criterion.py:184:                competitor_logits = final_logits[competitors, class_index]
+src/zoo/rtdetr/tccm_criterion.py:187:                    (competitor_logits - winner_logit + margins) / self.tccm_temperature
+src/zoo/rtdetr/tccm_criterion.py:189:                pair_weights = (values * winner_iou).detach().clamp_min(self.eps)
+src/zoo/rtdetr/tccm_criterion.py:216:            winner_ious = []
+src/zoo/rtdetr/tccm_criterion.py:219:                winner_ious.append(torch.diag(pairwise_iou_cxcywh(boxes, matched_targets)))
+src/zoo/rtdetr/tccm_criterion.py:220:            iou_stack = torch.stack(winner_ious, dim=0)
+src/zoo/rtdetr/tccm_criterion.py:254:        raw_rank = self._rank_loss(outputs, targets, final_indices)
+src/zoo/rtdetr/tqrs_criterion.py:300:        # Always preserve the final Hungarian winner as the trajectory anchor.
+configs/weedlab_formal/sr_tccm_experiments/.ipynb_checkpoints/S2_scale_reliable_tccm-checkpoint.yml:3:output_dir: ./output/repeated_runs/S2_scale_reliable_tccm5903
+configs/weedlab_formal/sr_tccm_experiments/.ipynb_checkpoints/S2_scale_reliable_tccm-checkpoint.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/.ipynb_checkpoints/S2_scale_reliable_tccm-checkpoint.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/.ipynb_checkpoints/S2_scale_reliable_tccm-checkpoint.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/.ipynb_checkpoints/S2_scale_reliable_tccm-checkpoint.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/.ipynb_checkpoints/S2_scale_reliable_tccm-checkpoint.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/A1_no_trajectory.yml:3:output_dir: ./output/sr_tccm_experiments/A1_no_trajectory
+configs/weedlab_formal/sr_tccm_experiments/A1_no_trajectory.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/A1_no_trajectory.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/A1_no_trajectory.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/A1_no_trajectory.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/A1_no_trajectory.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/A2_scale_no_trajectory.yml:3:output_dir: ./output/sr_tccm_experiments/A2_scale_no_trajectory
+configs/weedlab_formal/sr_tccm_experiments/A2_scale_no_trajectory.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/A2_scale_no_trajectory.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/A2_scale_no_trajectory.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/A2_scale_no_trajectory.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/A2_scale_no_trajectory.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/S1_weak_tccm.yml:3:output_dir: ./output/sr_tccm_experiments/S1_weak_tccm
+configs/weedlab_formal/sr_tccm_experiments/S1_weak_tccm.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/S1_weak_tccm.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/S1_weak_tccm.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/S1_weak_tccm.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/S1_weak_tccm.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm.yml:3:output_dir: ./output/repeated_runs/S2_scale_reliable_tccm5903
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed2026.yml:3:output_dir: ./output/repeated_runs/S2_scale_reliable_tccm_seed2026
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed2026.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed2026.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed2026.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed2026.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed2026.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed3407.yml:3:output_dir: ./output/repeated_runs/S2_scale_reliable_tccm_seed3407
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed3407.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed3407.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed3407.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed3407.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/S2_scale_reliable_tccm_seed3407.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/S3_scale_quality_tccm.yml:3:output_dir: ./output/sr_tccm_experiments/S3_scale_quality_tccm
+configs/weedlab_formal/sr_tccm_experiments/S3_scale_quality_tccm.yml:5:criterion: SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/S3_scale_quality_tccm.yml:7:SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/S3_scale_quality_tccm.yml:20:  # Persistent same-target competitor mining.
+configs/weedlab_formal/sr_tccm_experiments/S3_scale_quality_tccm.yml:23:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/S3_scale_quality_tccm.yml:37:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/sr_tccm_experiments/S4_conditional_soft_quality.yml:3:output_dir: ./output/sr_tccm_experiments/S4_conditional_soft_quality
+configs/weedlab_formal/sr_tccm_experiments/S4_conditional_soft_quality.yml:5:criterion: S4SRTCCMCriterionv2
+configs/weedlab_formal/sr_tccm_experiments/S4_conditional_soft_quality.yml:7:S4SRTCCMCriterionv2:
+configs/weedlab_formal/sr_tccm_experiments/S4_conditional_soft_quality.yml:22:  sr_max_competitors: 2
+configs/weedlab_formal/sr_tccm_experiments/S4_conditional_soft_quality.yml:36:  sr_winner_iou_tau: 0.05
+configs/weedlab_formal/tccm_experiments/A1_tccm_no_trajectory.yml:19:  tccm_max_competitors: 2
+configs/weedlab_formal/tccm_experiments/A1_tccm_no_trajectory.yml:22:  tccm_winner_iou_tolerance: 0.02
+configs/weedlab_formal/tccm_experiments/C1_tccm_rank.yml:19:  tccm_max_competitors: 2
+configs/weedlab_formal/tccm_experiments/C1_tccm_rank.yml:22:  tccm_winner_iou_tolerance: 0.02
+configs/weedlab_formal/tccm_experiments/C2_tccm_rank_shared.yml:19:  tccm_max_competitors: 2
+configs/weedlab_formal/tccm_experiments/C2_tccm_rank_shared.yml:22:  tccm_winner_iou_tolerance: 0.02
+configs/weedlab_formal/tccm_experiments/C3_tccm_full.yml:19:  tccm_max_competitors: 2
+configs/weedlab_formal/tccm_experiments/C3_tccm_full.yml:22:  tccm_winner_iou_tolerance: 0.02
+configs/cottonweed/CQ_RTDETR_SR_TCCM.yml:3:output_dir: ./output/repeated_runs/S2_scale_reliable_tccm5903
+configs/cottonweed/CQ_RTDETR_SR_TCCM.yml:5:criterion: SRTCCMCriterionv2
+configs/cottonweed/CQ_RTDETR_SR_TCCM.yml:7:SRTCCMCriterionv2:
+configs/cottonweed/CQ_RTDETR_SR_TCCM.yml:20:  # Persistent same-target competitor mining.
+configs/cottonweed/CQ_RTDETR_SR_TCCM.yml:23:  sr_max_competitors: 2
+configs/cottonweed/CQ_RTDETR_SR_TCCM.yml:37:  sr_winner_iou_tau: 0.05

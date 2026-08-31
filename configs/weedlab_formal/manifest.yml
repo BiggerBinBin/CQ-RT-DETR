@@ -1,0 +1,7 @@
+A_baseline: /root/autodl-tmp/RT-DETR/rtdetrv2_pytorch/configs/weedlab_formal/A_baseline.yml
+B_lite: /root/autodl-tmp/RT-DETR/rtdetrv2_pytorch/configs/weedlab_formal/B_lite.yml
+C_lite_ms: /root/autodl-tmp/RT-DETR/rtdetrv2_pytorch/configs/weedlab_formal/C_lite_ms.yml
+D_lite_cb: /root/autodl-tmp/RT-DETR/rtdetrv2_pytorch/configs/weedlab_formal/D_lite_cb.yml
+D_lite_cb_72: /root/autodl-tmp/RT-DETR/rtdetrv2_pytorch/configs/weedlab_formal/D_lite_cb_72.yml
+D_lite_cb_fixed: /root/autodl-tmp/RT-DETR/rtdetrv2_pytorch/configs/weedlab_formal/D_lite_cb_fixed.yml
+B_lite_50k: /root/autodl-tmp/RT-DETR/rtdetrv2_pytorch/configs/weedlab_formal/B_lite_50k.yml

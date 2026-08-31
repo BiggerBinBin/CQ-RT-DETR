@@ -1,0 +1,103 @@
+__include__:
+- ../rtdetrv2/rtdetrv2_r18vd_120e_coco.yml
+output_dir: /root/autodl-tmp/rtdetr_weedlab/runs_formal/B_lite
+num_classes: 12
+remap_mscoco_category: false
+epoches: 80
+PResNet:
+  depth: 18
+  freeze_at: -1
+  freeze_norm: false
+  pretrained: true
+train_dataloader:
+  dataset:
+    type: CocoDetection
+    img_folder: /root/autodl-tmp/rtdetr_weedlab/dataset_coco_640/images/train
+    ann_file: /root/autodl-tmp/rtdetr_weedlab/dataset_coco_640/annotations/instances_train.json
+    return_masks: false
+    transforms:
+      type: Compose
+      ops:
+      - type: RandomPhotometricDistort
+        p: 0.5
+      - type: Resize
+        size:
+        - 640
+        - 640
+      - type: RandomZoomOut
+        fill: 0
+      - type: RandomIoUCrop
+        p: 0.8
+      - type: SanitizeBoundingBoxes
+        min_size: 1
+      - type: RandomHorizontalFlip
+      - type: Resize
+        size:
+        - 384
+        - 384
+      - type: SanitizeBoundingBoxes
+        min_size: 1
+      - type: ConvertPILImage
+        dtype: float32
+        scale: true
+      - type: ConvertBoxes
+        fmt: cxcywh
+        normalize: true
+      policy:
+        name: stop_epoch
+        epoch: 70
+        ops:
+        - RandomPhotometricDistort
+        - RandomZoomOut
+        - RandomIoUCrop
+  shuffle: true
+  total_batch_size: 8
+  num_workers: 8
+  drop_last: true
+  collate_fn:
+    type: BatchImageCollateFunction
+    scales: null
+    stop_epoch: 65
+val_dataloader:
+  dataset:
+    type: CocoDetection
+    img_folder: /root/autodl-tmp/rtdetr_weedlab/dataset_coco_640/images/val
+    ann_file: /root/autodl-tmp/rtdetr_weedlab/dataset_coco_640/annotations/instances_val.json
+    return_masks: false
+    transforms:
+      type: Compose
+      ops:
+      - type: Resize
+        size:
+        - 384
+        - 384
+      - type: ConvertPILImage
+        dtype: float32
+        scale: true
+  shuffle: false
+  total_batch_size: 16
+  num_workers: 8
+  drop_last: false
+  collate_fn:
+    type: BatchImageCollateFunction
+HybridEncoder:
+  in_channels:
+  - 128
+  - 256
+  - 512
+  hidden_dim: 192
+  expansion: 0.5
+RTDETRTransformerv2:
+  hidden_dim: 192
+  num_layers: 2
+  num_queries: 100
+  feat_channels:
+  - 192
+  - 192
+  - 192
+eval_spatial_size:
+- 384
+- 384
+RTDETRPostProcessor:
+  num_top_queries: 100
+checkpoint_freq: 10
